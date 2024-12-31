@@ -5,22 +5,22 @@ import { userAPIConstants } from '../lib/constants';
 
 const prisma = new PrismaClient();
 
-export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
-  let { name = '', page = 1, limit = 10 } = req.query;
+export const getPosts = async (req: Request, res: Response, next: NextFunction) => {
+  let { page = 1, limit = 10 } = req.query;
 
   const { limit: limitValue, offset } = paginationFilter(page as number, limit as number);
 
   try {
     const users = await prisma.user.findMany({
-      take: parseInt(limitValue.toString()),
+      take: parseInt(limitValue),
       skip: offset,
-      where: {
-        name: {
-          contains: name as string,
-        },
+
+      include: {
+        posts: true,
+        profile: true,
       },
-      omit: {
-        password: true,
+      orderBy: {
+        id: 'asc',
       },
     });
     const usersCount = await prisma.user.count();
@@ -30,12 +30,12 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
     if (error instanceof Error) {
       res.status(500).json({ message: error?.message });
     } else {
-      res.status(500).json({ message: userAPIConstants.GLOBAL_ERROR_MESSAGE });
+      res.status(500).json({ message: 'Something went wrong' });
     }
   }
 };
 
-export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
+export const getPostById = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
 
   try {
@@ -50,12 +50,41 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
     if (error instanceof Error) {
       res.status(500).json({ message: error?.message });
     } else {
-      res.status(500).json({ message: userAPIConstants.GLOBAL_ERROR_MESSAGE });
+      res.status(500).json({ message: 'Something went wrong' });
     }
   }
 };
 
-export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
+export const createPost = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, name, posts } = req.body;
+    console.log(posts);
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        name,
+        posts: {
+          create: posts.map((post: { title: string; content?: string }) => ({
+            title: post.title,
+            content: post.content || null, // If content is missing, set it as null
+          })),
+        },
+      },
+      include: {
+        posts: true,
+      },
+    });
+    res.status(201).json({ message: newUser });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(500).json({ message: error?.message });
+    } else {
+      res.status(500).json({ message: 'Something went wrong' });
+    }
+  }
+};
+
+export const updatePost = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id: userId } = req.params;
     const { name, email } = req.body;
@@ -73,15 +102,15 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
     if (error instanceof Error) {
       res.status(500).json({ message: error?.message });
     } else {
-      res.status(500).json({ message: userAPIConstants.GLOBAL_ERROR_MESSAGE });
+      res.status(500).json({ message: 'Something went wrong' });
     }
   }
 };
 
-export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+export const deletePost = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id: userId } = req.params;
-    const user = await prisma.user.delete({
+    const response = await prisma.user.delete({
       where: {
         id: parseInt(userId),
       },
@@ -91,7 +120,7 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
     if (error instanceof Error) {
       res.status(500).json({ message: error?.message });
     } else {
-      res.status(500).json({ message: userAPIConstants.GLOBAL_ERROR_MESSAGE });
+      res.status(500).json({ message: 'Something went wrong' });
     }
   }
 };

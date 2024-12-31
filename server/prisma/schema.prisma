@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["omitApi"]
 }
 
 datasource db {
@@ -7,28 +8,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-}
+  model User {
+    id Int @id @default(autoincrement())
+    name String
+    email String @unique
+    password String 
+    posts Post[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+  }
 
-model Profile {
-  id     Int     @id @default(autoincrement())
-  bio    String?
-  userId Int     @unique
-  user   User    @relation(fields: [userId], references: [id])
-}
+  model Post {
+    id Int @id @default(autoincrement())
+    title String
+    content String?
+    authorId Int
+    author User @relation(fields: [authorId], references: [id])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+  }
 
-model User {
-  id      Int      @id @default(autoincrement())
-  email   String
-  name    String?
-  posts   Post[]
-  profile Profile?
-}
+  model Comment {
+    id Int @id @default(autoincrement())
+    content String
+    category Category[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+  }
+  model Category {
+    id Int @id @default(autoincrement())
+    name String
+    description String?
+    comments Comment[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+  }
