@@ -20,11 +20,11 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
         },
       },
       omit: {
+        id: true,
         password: true,
       },
     });
     const usersCount = await prisma.user.count();
-
     res.status(200).json({ totalCount: usersCount, data: users });
   } catch (error) {
     if (error instanceof Error) {
@@ -36,12 +36,12 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
 };
 
 export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params;
+  const { userId } = req.params;
 
   try {
     const user = await prisma.user.findUnique({
       where: {
-        id: parseInt(id),
+        userId
       },
     });
 
